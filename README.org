@@ -21,3 +21,7 @@ include:
 - [ ] Types representing scarce resources
 - [ ] Documentation
 - [ ] Register in [[https://github.com/JuliaRegistries/General/][General registry]].
+- [ ] Benchmark against [[https://github.com/ChrisRackauckas/LinkedLists.jl][LinkedLists.jl]].
+  - [ ] If benchmarks are favorable, consider splitting my linked list
+    implementation into its own package or contributing the
+    implementation to LinkedLists.jl.
