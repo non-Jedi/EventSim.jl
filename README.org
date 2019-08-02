@@ -13,9 +13,30 @@ include:
   ResumableFunctions.jl, better interop may be maintained with the
   rest of the Julia package ecosystem.
 
+The downside of this approach is that you will not be able to create a
+process that sequentially waits for a several other processes to
+finish within a single logical Julia function. Instead, the actions to
+be taken after each process finishes must be encoded as a single
+logical function. As an example, with SimJulia.jl, you can write
+something like the following:
+
+#+begin_src julia
+  @resumable function make_widget(env)
+      @yield @process get_parts(env)
+      @yield @process assemble_parts(env)
+      @yield @process polish_widget(env)
+  end#function
+#+end_src
+
+It's not clear that the same is possible with an Observables.jl-based
+approach. Instead, each of ~get_parts~, ~assemble_parts~, and
+~polish_widget~ may need to be individually chained off the previous step.
+
 ** TODO Status
 
 - [X] Implement a doubly-linked list for the calendar
+- [ ] Make sure [[https://github.com/JuliaGizmos/Observables.jl/issues/1][observables won't be garbage-collected prematurely]] in
+  the planned design.
 - [ ] Functions/macros for scheduling an event
 - [ ] Run a simulation
 - [ ] Types representing scarce resources
