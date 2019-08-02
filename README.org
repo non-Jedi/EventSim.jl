@@ -1,4 +1,5 @@
 * EventSim.jl
+[[https://travis-ci.org/non-Jedi/EventSim.jl][https://travis-ci.org/non-Jedi/EventSim.jl.svg?branch=master]] [[https://coveralls.io/github/non-Jedi/EventSim.jl?branch=master][https://coveralls.io/repos/github/non-Jedi/EventSim.jl/badge.svg?branch=master]]
 
 Sketch of an experiment to create a [[https://en.wikipedia.org/wiki/Discrete-event_simulation][Discrete-event simulation]] package
 based on [[https://juliagizmos.github.io/Observables.jl/stable/][Observables.jl]]. This is in contrast to [[https://github.com/BenLauwens/SimJulia.jl][SimJulia.jl]], which
