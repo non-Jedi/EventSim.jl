@@ -10,7 +10,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 # General Public License for more details.
 
-using Test, EventSim
+using Test, EventSim, Observables
 using EventSim.LinkedLists
 
 @testset "linked list" begin
@@ -45,3 +45,43 @@ using EventSim.LinkedLists
     end#@testset
 end#@testset
 
+@testset "schedule!" begin
+    sim = Simulation()
+    toggle_check = Observable(0)
+    f() = (toggle_check[] = 1)
+    g() = (toggle_check[] = 2)
+    h() = (toggle_check[] = 3)
+
+    event1 = schedule!(f, sim, 5)
+    event2 = schedule!(g, sim, 7)
+    event3 = schedule!(f, sim, 18.0)
+    event4 = schedule!(h, sim, 12)
+
+    @test length(sim.calendar) == 5
+    @test toggle_check[] == 0
+
+    node = firstnode(sim.calendar)
+    node[].status[] = true
+    @test node[] != event1
+    @test toggle_check[] == 0
+
+    node = next(node)
+    node[].status[] = true
+    @test node[] == event1
+    @test toggle_check[] == 1
+
+    node = next(node)
+    node[].status[] = true
+    @test node[] == event2
+    @test toggle_check[] == 2
+
+    node = next(node)
+    node[].status[] = true
+    @test node[] == event4
+    @test toggle_check[] == 3
+
+    node = next(node)
+    node[].status[] = true
+    @test node[] == event3
+    @test toggle_check[] == 1
+end#@testset
