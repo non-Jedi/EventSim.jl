@@ -1,0 +1,17 @@
+name = "EventSim"
+uuid = "031306f2-b532-11e9-37d6-7d5d675e6f97"
+authors = ["Adam Beckmeyer <adam_gpg@thebeckmeyers.xyz>"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[deps]
+Observables = "510215fc-4207-5dde-b226-833fc4488ee2"
+
+[extras]
+JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test", "JuliaFormatter"]
