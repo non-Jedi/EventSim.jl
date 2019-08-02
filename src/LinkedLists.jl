@@ -13,10 +13,10 @@
 "Efficient implementation of a doubly-linked list."
 module LinkedLists
 
-export List, next, prev, firstnode, lastnode
+export List, Node, next, prev, firstnode, lastnode
 
 import Base: push!, insert!, iterate, eltype, length, getindex, setindex!,
-    @propagate_inbounds
+    @propagate_inbounds, show
 
 const MIndex = Union{Int,Nothing}
 
@@ -38,6 +38,14 @@ end#struct
 List{T}() where T = List{T}(T[], MIndex[], MIndex[], nothing, nothing)
 length(l::List) = length(l.data)
 
+@propagate_inbounds function show(io::IO, l::List{T}) where T
+    print(io, "List{", T, "}(")
+    for i in collect(l)[1:end-1]
+        print(io, i, ", ")
+    end#for
+    print(io, l.data[l.lastind], ')')
+end#function
+
 @propagate_inbounds function iterate(l::List)
     l.firstind === nothing && return
     (l.data[l.firstind], l.firstind)
@@ -54,7 +62,7 @@ end#function
         push!(l.data, x)
         push!(l.next, nothing)
         push!(l.prev, nothing)
-        l.firstind = l.lastind = length(l.data)
+        l.firstind = l.lastind = 1
     else
         push!(l.data, x)
         l.next[l.lastind] = length(l.data)
@@ -69,12 +77,16 @@ end#function
 Represents a Node in a linked list.
 
 Value can be accessed with `node[]`. Move through the list using
-`next` and `prev`. Modify the list using `insert!`.
+`next` and `prev`. Modify the list using `insert!`. `Node`s should not
+be created directly but accessed by using `firstnode` or `lastnode` on
+a `List`.
 """
 struct Node{T}
     list::List{T}
     index::Int
 end#struct
+
+show(io::IO, n::Node) = print(io, "Node(", n[], ')')
 
 @propagate_inbounds getindex(x::Node) = x.list.data[x.index]
 @propagate_inbounds function setindex!(node::Node{T}, x::T) where T
@@ -143,8 +155,8 @@ This operation takes constant time. It returns the original `node`.
     prevnode_index = node.list.prev[node.index]
     # Create new node
     push!(node.list.data, item)
-    push!(node.list.prev, node.index)
-    push!(node.list.next, nothing)
+    push!(node.list.prev, prevnode_index)
+    push!(node.list.next, node.index)
     newnode_index = length(node.list.data)
     # Update following node
     node.list.prev[node.index] = newnode_index
