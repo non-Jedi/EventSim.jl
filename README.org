@@ -35,10 +35,12 @@ approach. Instead, each of ~get_parts~, ~assemble_parts~, and
 ** TODO Status
 
 - [X] Implement a doubly-linked list for the calendar
-- [ ] Make sure [[https://github.com/JuliaGizmos/Observables.jl/issues/1][observables won't be garbage-collected prematurely]] in
+- [X] Make sure [[https://github.com/JuliaGizmos/Observables.jl/issues/1][observables won't be garbage-collected prematurely]] in
   the planned design.
 - [ ] Functions/macros for scheduling an event
-- [ ] Run a simulation
+  - [ ] Callbacks need to have simulation object passed to them rather
+    than being simple thunks.
+- [X] Run a simulation
 - [ ] Types representing scarce resources
 - [ ] Documentation
 - [ ] Register in [[https://github.com/JuliaRegistries/General/][General registry]].

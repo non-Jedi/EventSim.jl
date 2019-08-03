@@ -10,8 +10,12 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 # General Public License for more details.
 
+# * EventSim.jl testing
+
 using Test, EventSim, Observables
 using EventSim.LinkedLists
+
+# ** LinkedLists.jl
 
 @testset "linked list" begin
     l = List{Int}()
@@ -45,12 +49,14 @@ using EventSim.LinkedLists
     end#@testset
 end#@testset
 
+# ** Scheduling
+
 @testset "schedule!" begin
     sim = Simulation()
     toggle_check = Observable(0)
-    f() = (toggle_check[] = 1)
-    g() = (toggle_check[] = 2)
-    h() = (toggle_check[] = 3)
+    f() = toggle_check[] = 1
+    g() = toggle_check[] = 2
+    h() = toggle_check[] = 3
 
     event1 = schedule!(f, sim, 5)
     event2 = schedule!(g, sim, 7)
@@ -84,4 +90,48 @@ end#@testset
     node[].status[] = true
     @test node[] == event3
     @test toggle_check[] == 1
+end#@testset
+
+# ** Running
+
+@testset "running" begin
+    sim = Simulation()
+    watcher = Observable(0)
+    f1() = watcher[] = 1
+    t1() = @test watcher[] == 1
+    f2() = watcher[] = 2
+    t2() = @test watcher[] == 2
+    f3() = watcher[] = 3
+    t3() = @test watcher[] == 3
+
+    e1 = schedule!(f1, sim, 2)
+    e2 = schedule!(f2, sim, 0.2)
+    e3 = schedule!(f1, sim, 500)
+    e4 = schedule!(f3, sim, 11)
+    e5 = schedule!(f2, sim, 6)
+    e6 = schedule!(f3, sim, 50)
+    e7 = schedule!(f2, sim, 60)
+
+    e8 = schedule!(t1, sim, 2.01)
+    e9 = schedule!(t2, sim, 0.201)
+    e10 = schedule!(t1, sim, 500.01)
+    e11 = schedule!(t3, sim, 11.01)
+    e12 = schedule!(t2, sim, 6.01)
+    e13 = schedule!(t3, sim, 50.01)
+    e14 = schedule!(t2, sim, 60.01)
+
+    run!(sim, 400)
+    @test now(sim) ≈ 400
+    @test !e3.status[]
+    @test !e10.status[]
+    @test e1.status[]
+    @test e2.status[]
+    @test e7.status[]
+    @test e12.status[]
+    @test e14.status[]
+
+    run!(sim, 600)
+    @test now(sim) ≈ 600
+    @test e3.status[]
+    @test e10.status[]
 end#@testset

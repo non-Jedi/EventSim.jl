@@ -10,15 +10,19 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 # General Public License for more details.
 
+# * EventSim.jl
+
 module EventSim
 
-export Simulation, schedule!
+export Simulation, now, schedule!, schedule_after!, occur!, run!
 
 include("LinkedLists.jl")
 
 using .LinkedLists, Observables
 
 import Base: show
+
+# ** Datastructures
 
 """
     Event(time)
@@ -46,6 +50,15 @@ function Simulation(t=0)
     push!(calendar, Event(t))
     Simulation(calendar, firstnode(calendar))
 end#function
+
+# ** Scheduling
+
+"""
+    now(sim)
+
+Return the current time in `sim`.
+"""
+now(sim::Simulation) = sim.pos[].time
 
 """
     findt(calendar, t)
@@ -98,5 +111,39 @@ function schedule!(f, sim::Simulation, t)
     end#if
     event
 end#function
+
+"""
+    schedule_after!(f, sim, Δt)
+
+Schedules `f` to run in `sim` after `Δt` time units have elapsed.
+"""
+schedule_after!(f, sim::Simulation, Δt) = schedule!(f, sim, now(sim) + Δt)
+
+# ** Running
+
+"""
+    occur!(event)
+
+Make an `event` occur and run all associated callbacks.
+"""
+occur!(event::Event) = event.status[] = true
+
+"""
+    run(sim, t)
+
+Run `sim` until time `t`.
+"""
+function run!(sim::Simulation, t)
+    if now(sim) < t
+        endofsim = schedule!(Nothing, sim, t)
+        while sim.pos !== nothing && sim.pos[] != endofsim
+            occur!(sim.pos[])
+            sim.pos = next(sim.pos)
+        end#while
+    end#if
+    sim
+end#function
+
+# ** End module
 
 end#module
