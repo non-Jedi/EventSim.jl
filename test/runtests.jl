@@ -54,9 +54,9 @@ end#@testset
 @testset "schedule!" begin
     sim = Simulation()
     toggle_check = Observable(0)
-    f() = toggle_check[] = 1
-    g() = toggle_check[] = 2
-    h() = toggle_check[] = 3
+    f(_) = toggle_check[] = 1
+    g(_) = toggle_check[] = 2
+    h(_) = toggle_check[] = 3
 
     event1 = schedule!(f, sim, 5)
     event2 = schedule!(g, sim, 7)
@@ -97,12 +97,12 @@ end#@testset
 @testset "running" begin
     sim = Simulation()
     watcher = Observable(0)
-    f1() = watcher[] = 1
-    t1() = @test watcher[] == 1
-    f2() = watcher[] = 2
-    t2() = @test watcher[] == 2
-    f3() = watcher[] = 3
-    t3() = @test watcher[] == 3
+    f1(_) = watcher[] = 1
+    t1(_) = @test watcher[] == 1
+    f2(_) = watcher[] = 2
+    t2(_) = @test watcher[] == 2
+    f3(_) = watcher[] = 3
+    t3(_) = @test watcher[] == 3
 
     e1 = schedule!(f1, sim, 2)
     e2 = schedule!(f2, sim, 0.2)

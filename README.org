@@ -37,12 +37,20 @@ approach. Instead, each of ~get_parts~, ~assemble_parts~, and
 - [X] Implement a doubly-linked list for the calendar
 - [X] Make sure [[https://github.com/JuliaGizmos/Observables.jl/issues/1][observables won't be garbage-collected prematurely]] in
   the planned design.
-- [ ] Functions/macros for scheduling an event
-  - [ ] Callbacks need to have simulation object passed to them rather
+- [-] Functions/macros for scheduling an event
+  - [X] Callbacks need to have simulation object passed to them rather
     than being simple thunks.
-- [X] Run a simulation
+  - [ ] forward Observables.jl ~on~ methods when called with ~Event~
+    types.
+  - [ ] Reread SimJulia.jl docs to see if any other times you'd want
+    to attach a callback.
+- [ ] Come up with gameplan for modeling breakdowns without having to
+  design it into the system from the start.
+- [X] Run a simulation.
 - [ ] Types representing scarce resources
 - [ ] Documentation
+  - [ ] Write-up example simulations
+  - [ ] Host documentation somewhere other than in README
 - [ ] Register in [[https://github.com/JuliaRegistries/General/][General registry]].
 - [ ] Benchmark against [[https://github.com/ChrisRackauckas/LinkedLists.jl][LinkedLists.jl]].
   - [ ] If benchmarks are favorable, consider splitting my linked list

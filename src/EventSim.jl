@@ -81,8 +81,8 @@ function findt(calendar::List{Event}, t)
 end#function
 
 # Callbacks on observables should expect the value of the observable
-# as an argument. EventSim api expects "thunks": f()
-fwrapper(f) = _ -> f()
+# as an argument. EventSim api single argument of sim: f(sim)
+fwrapper(f, sim, args...) = _ -> f(sim, args...)
 
 """
     schedule!(f, sim, t)
@@ -95,10 +95,13 @@ Returns an `Event` which will have it's `status` toggled to
 If the current simulation time is already past `t`, `Event.status[]`
 will immediately be toggled to `true`, and `f` will immediately
 execute.
+
+`f` should be a function that takes a simulation object as a first and
+only argument.
 """
-function schedule!(f, sim::Simulation, t)
+function schedule!(f, sim::Simulation, t, fargs...)
     event = Event(t)
-    on(fwrapper(f), event.status)
+    on(fwrapper(f, sim, fargs...), event.status)
     if t <= sim.pos[].time
         event.status[] = true
     else
@@ -135,7 +138,7 @@ Run `sim` until time `t`.
 """
 function run!(sim::Simulation, t)
     if now(sim) < t
-        endofsim = schedule!(Nothing, sim, t)
+        endofsim = schedule!(_ -> nothing, sim, t)
         while sim.pos !== nothing && sim.pos[] != endofsim
             occur!(sim.pos[])
             sim.pos = next(sim.pos)
