@@ -13,50 +13,133 @@
 "Efficient implementation of a doubly-linked list."
 module LinkedLists
 
-export List, Node, next, prev, firstnode, lastnode
+export List, pop!, popfirst!, first, last, firstindex, lastindex,
+    nextindex, previndex
 
-import Base: push!, insert!, iterate, eltype, length, getindex, setindex!,
-    @propagate_inbounds, show
+import Base: eltype, length, iterate, getindex, setindex!,
+    @propagate_inbounds, checkbounds, show, keys, push!, insert!,
+    pop!, popfirst!, first, last, firstindex, lastindex
 
 const MIndex = Union{Int,Nothing}
 
+# TODO: grow List.data by page size increments using sizehint
 """
     List{T}()
 
 Create a doubly-linked list.
 
-`List` implements the iterable interface. You can also use `firstnode`
-and `lastnode` to get `Node` instances to use directly.
+`List` implements the iterable interface but can also have its items
+accessed with indices.
+
+An index into a `List` should be treated as opaque. The next item in
+the list is not necessarily located at the next incremental index.
 """
 mutable struct List{T}
     data::Vector{T}
     next::Vector{MIndex}
     prev::Vector{MIndex}
+    removed::Vector{Int}
     firstind::MIndex
     lastind::MIndex
 end#struct
-List{T}() where T = List{T}(T[], MIndex[], MIndex[], nothing, nothing)
-length(l::List) = length(l.data)
+# TODO: constructor from generic iterable
+List{T}() where T = List{T}(T[], MIndex[], MIndex[], Int[], nothing, nothing)
+
+eltype(::List{T}) where T = T
+
+length(l::List) = length(l.data) - length(l.removed)
+
+checkbounds(::Type{Bool}, l::List, i::Int) =
+    i ≥ 1 && i ≤ length(l.data) && !in(i, l.removed)
+
+@inline function getindex(l::List, i::Int)
+    @boundscheck checkbounds(Bool, l, i)
+    @inbounds l.data[i]
+end#function
+
+@propagate_inbounds first(l::List) =
+    isempty(l) ? error("empty list has no first element") : l[l.firstind]
+
+@propagate_inbounds last(l::List) =
+    isempty(l) ? error("empty list has no last element") : l[l.lastind]
+
+@propagate_inbounds firstindex(l::List) =
+    isempty(l) ? error("empty list has no first element") : l.firstind
+
+@propagate_inbounds lastindex(l::List) =
+    isempty(l) ? error("empty list has no first element") : l.lastind
+
+@inline function setindex!(l::List{T}, v::T, i::Int) where T
+    @boundscheck checkbounds(Bool, l, i)
+    @inbounds l.data[i] = v
+end#function
 
 @propagate_inbounds function show(io::IO, l::List{T}) where T
     print(io, "List{", T, "}(")
-    for i in collect(l)[1:end-1]
-        print(io, i, ", ")
-    end#for
-    print(io, l.data[l.lastind], ')')
+    if !isempty(l)
+        for i in collect(l)[1:end-1]
+            print(io, i, ", ")
+        end#for
+        print(io, l.data[l.lastind])
+    end#if
+    print(io, ')')
 end#function
 
-@propagate_inbounds function iterate(l::List)
-    l.firstind === nothing && return
-    (l.data[l.firstind], l.firstind)
+@propagate_inbounds function iterate(l::List, i::Union{Nothing,Int}=l.firstind)
+    i === nothing && return
+    (l.data[i], l.next[i])
 end#function
 
-@propagate_inbounds function iterate(l::List, i::Int)
-    nextindex = l.next[i]
-    nextindex === nothing && return
-    (l.data[nextindex], nextindex)
+#"""
+#    next(list, index)
+#
+#Returns the next value from `index`.
+#"""
+#function next(list::List, index::Int)
+#end#function
+
+"""
+    nextindex(list, index)
+
+Returns the index immediately following `index` in `list`.
+
+Returns nothing if at end of `list`.
+"""
+@inline function nextindex(l::List, i::Int)
+    @boundscheck checkbounds(Bool, l, i)
+    @inbounds l.next[i]
 end#function
 
+"""
+    previndex(list, index)
+
+Returns the index immediately preceding `index` in `list`.
+
+Returns nothing if at start of `list`.
+"""
+@inline function previndex(l::List, i::Int)
+    @boundscheck checkbounds(Bool, l, i)
+    @inbounds l.prev[i]
+end#function
+
+"Simple wrapper around `List` to allow iterating through indices."
+struct ListIndices{T}
+    list::List{T}
+end#struct
+
+eltype(::ListIndices) = Int
+
+length(li::ListIndices) = length(li.list)
+
+@propagate_inbounds function iterate(li::ListIndices,
+                                     i::Union{Nothing,Int}=li.list.firstind)
+    i === nothing && return
+    (i, li.list.next[i])
+end#function
+
+keys(l::List) = ListIndices(l)
+
+# TODO: reuse indices in List.removed
 @propagate_inbounds function push!(l::List{T}, x::T) where T
     if l.lastind === nothing
         push!(l.data, x)
@@ -73,100 +156,71 @@ end#function
     l
 end#function
 
-"""
-Represents a Node in a linked list.
+@inline function insert!(l::List{T}, i::Int, value::T) where T
+    @boundscheck checkbounds(Bool, l, i)
+    previ = l.prev[i]
 
-Value can be accessed with `node[]`. Move through the list using
-`next` and `prev`. Modify the list using `insert!`. `Node`s should not
-be created directly but accessed by using `firstnode` or `lastnode` on
-a `List`.
-"""
-struct Node{T}
-    list::List{T}
-    index::Int
-end#struct
+    # First create new entry for inserted value
+    push!(l.data, value)
+    push!(l.next, i)
+    push!(l.prev, previ)
+    newi = length(l.data)
 
-show(io::IO, n::Node) = print(io, "Node(", n[], ')')
+    # Update list at i
+    l.prev[i] = newi
 
-@propagate_inbounds getindex(x::Node) = x.list.data[x.index]
-@propagate_inbounds function setindex!(node::Node{T}, x::T) where T
-    node.list.data[node.index] = x
-    node
-end#function
-
-"""
-    next(node)
-
-Get the next node in a list.
-
-Returns nothing if node was last node in list.
-"""
-@propagate_inbounds function next(x::Node)
-    nextindex = x.list.next[x.index]
-    nextindex === nothing && return
-    Node(x.list, nextindex)
-end#function
-
-"""
-    prev(node)
-
-Get the previous node in a list.
-
-Returns nothing if node was the first node in list.
-"""
-@propagate_inbounds function prev(x::Node)
-    previndex = x.list.prev[x.index]
-    previndex === nothing && return
-    Node(x.list, previndex)
-end#function
-
-"""
-    firstnode(list)
-
-Get the first `Node` in `list`.
-
-Returns nothing if list is empty.
-"""
-@propagate_inbounds function firstnode(l::List)
-    l.firstind === nothing && return
-    Node(l, l.firstind)
-end#function
-
-"""
-    lastnode(list)
-
-Get the last `Node` in `list`.
-
-Returns nothing if list is empty.
-"""
-@propagate_inbounds function lastnode(l::List)
-    l.lastind === nothing && return
-    Node(l, l.lastind)
-end#function
-
-"""
-    insert!(node, item)
-
-Insert an `item` in the list `node` belongs to just before `node`.
-
-This operation takes constant time. It returns the original `node`.
-"""
-@propagate_inbounds function insert!(node::Node{T}, item::T) where T
-    prevnode_index = node.list.prev[node.index]
-    # Create new node
-    push!(node.list.data, item)
-    push!(node.list.prev, prevnode_index)
-    push!(node.list.next, node.index)
-    newnode_index = length(node.list.data)
-    # Update following node
-    node.list.prev[node.index] = newnode_index
-    # Update the preceding node
-    if prevnode_index === nothing
-        node.list.firstind = newnode_index
+    # Update list at previ
+    if previ === nothing
+        l.firstind = newi
     else
-        node.list.next[prevnode_index] = newnode_index
+        l.next[previ] = newi
     end#if
-    node
+    l
+end#function
+
+pop!(::List, ::Nothing, default) = throw(KeyError(nothing))
+
+function pop!(l::List, i::Int, default)
+    checkbounds(Bool, l, i) || return default
+
+    previ = l.prev[i]
+    nexti = l.next[i]
+    l.prev[i] = nothing
+    l.next[i] = nothing
+    push!(l.removed, i)
+
+    if previ === nothing
+        l.firstind = nexti
+    else
+        l.next[previ] = nexti
+    end#if
+
+    if nexti === nothing
+        l.lastind = previ
+    else
+        l.prev[nexti] = previ
+    end#if
+
+    l[i]
+end#function
+
+struct NoDefault end
+const nodefault = NoDefault()
+
+function pop!(l::List, i)
+    returnval = pop!(l, i, nodefault)
+    returnval === nodefault && throw(KeyError(i))
+    returnval
+end#function
+
+function pop!(l::List)
+    isempty(l) && throw(ArgumentError("list must be non-empty"))
+    pop!(l, l.firstind)
+end#function
+
+function popfirst!(l::List)
+    isempty(l) && throw(ArgumentError("list must be non-empty"))
+    pop!(l, l.lastind)
 end#function
 
 end#module

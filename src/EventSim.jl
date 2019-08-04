@@ -42,13 +42,13 @@ show(io::IO, e::Event) = print(io, "Event(", e.time, ", ", e.status[], ")")
 
 mutable struct Simulation
     calendar::List{Event}
-    pos::Node{Event}
+    pos::Int
 end#struct
 
 function Simulation(t=0)
     calendar = List{Event}()
     push!(calendar, Event(t))
-    Simulation(calendar, firstnode(calendar))
+    Simulation(calendar, firstindex(calendar))
 end#function
 
 # ** Scheduling
@@ -58,26 +58,23 @@ end#function
 
 Return the current time in `sim`.
 """
-now(sim::Simulation) = sim.pos[].time
+now(sim::Simulation) = sim.calendar[sim.pos].time
 
 """
     findt(calendar, t)
 
-Returns the `Node{Event}` immediately following `t`.
+Returns the `calendar` index immediately following `t`.
 
 If `t` is larger than any currently scheduled time, returns
 nothing. This is a linear-time operation.
 """
 function findt(calendar::List{Event}, t)
-    node = firstnode(calendar)
-    while true
-        if node === nothing
-            return node
-        elseif t <= node[].time
-            return node
+    @inbounds for i in eachindex(calendar)
+        if t ≤ calendar[i].time
+            return i
         end#if
-        node = next(node)
-    end#while
+    end#for
+    return
 end#function
 
 # Callbacks on observables should expect the value of the observable
@@ -102,14 +99,14 @@ only argument.
 function schedule!(f, sim::Simulation, t, fargs...)
     event = Event(t)
     on(fwrapper(f, sim, fargs...), event.status)
-    if t <= sim.pos[].time
-        event.status[] = true
+    if t <= now(sim)
+        occur!(event)
     else
-        node = findt(sim.calendar, t)
-        if node === nothing
+        pos = findt(sim.calendar, t)
+        if pos === nothing
             push!(sim.calendar, event)
         else
-            insert!(node, event)
+            insert!(sim.calendar, pos, event)
         end#if
     end#if
     event
@@ -139,9 +136,9 @@ Run `sim` until time `t`.
 function run!(sim::Simulation, t)
     if now(sim) < t
         endofsim = schedule!(_ -> nothing, sim, t)
-        while sim.pos !== nothing && sim.pos[] != endofsim
-            occur!(sim.pos[])
-            sim.pos = next(sim.pos)
+        @inbounds while sim.calendar[sim.pos] != endofsim
+            occur!(sim.calendar[sim.pos])
+            sim.pos = nextindex(sim.calendar, sim.pos)
         end#while
     end#if
     sim

@@ -34,7 +34,9 @@ approach. Instead, each of ~get_parts~, ~assemble_parts~, and
 
 ** TODO Status
 
-- [X] Implement a doubly-linked list for the calendar
+- [-] Implement a doubly-linked list for the calendar
+  - [X] Reimplement doubly-linked list...
+  - [ ] Update tests for new list implementation
 - [X] Make sure [[https://github.com/JuliaGizmos/Observables.jl/issues/1][observables won't be garbage-collected prematurely]] in
   the planned design.
 - [-] Functions/macros for scheduling an event
