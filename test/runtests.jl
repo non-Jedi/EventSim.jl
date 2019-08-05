@@ -18,37 +18,75 @@ using EventSim.LinkedLists
 # ** LinkedLists.jl
 
 # TODO: linked list testing...
-#@testset "linked list" begin
-#    l = List{Int}()
-#    v = [5, 6, 7, 2, 19, -5, 0, -350]
-#    for i in v
-#        push!(l, i)
-#    end#for
-#    for (i, j) in zip(l, v)
-#        @test i == j
-#    end#for
-#    @test length(l) == length(v)
-#    @testset "node" begin
-#        n1 = firstnode(l)
-#        n2 = next(n1)
-#        n3 = next(n2)
-#        n4 = next(n3)
-#        insert!(n4, 6)
-#        insert!(n3, -1)
-#        @test prev(n4) == next(n3)
-#        @test prev(n3) == next(n2)
-#        @test length(l) == length(v) + 2
-#        @test prev(n4)[] == 6
-#        @test next(n2)[] == -1
-#        insert!(n1, -2000)
-#        @test firstnode(l) == prev(n1)
-#        @test prev(n1)[] == -2000
-#        @test length(l) == length(v) + 3
-#        n1[] = 9000
-#        @test n1[] == 9000
-#        @test prev(n2)[] == 9000
-#    end#@testset
-#end#@testset
+@testset "linked list" begin
+    @testset "iterable interface and indexing" begin
+        v = [1, 2, 3, 2, 4, 5, 100, -3, 532]
+        l = List{Int}()
+        @test_throws ErrorException firstindex(l)
+        @test_throws ErrorException lastindex(l)
+        for i in v
+            push!(l, i)
+        end#for
+        for (i, j) in zip(v, l)
+            @test i == j
+        end#for
+        @test last(v) == last(l)
+        @test first(v) == first(l)
+        @test l[firstindex(l)] == first(l)
+        @test l[lastindex(l)] == last(l)
+        @test l[nextindex(l, firstindex(l))] == v[2]
+        @test l[previndex(l, lastindex(l))] == v[end-1]
+        @test next(l, firstindex(l)) == v[2]
+        @test prev(l, lastindex(l)) == v[end-1]
+
+        l[end] = 427
+        @test last(l) == 427
+
+        @test length(eachindex(l)) == length(v) == length(collect(eachindex(l)))
+    end#@testset
+    @testset "list mutation" begin
+        v = [1, 2, 3, 2, 4, 5, 100, -3, 532]
+        l = List{Int}()
+        @test_throws ArgumentError pop!(l)
+        for i in v
+            push!(l, i)
+        end#for
+
+        push!(l, 750)
+        @test length(l) == length(v) + 1
+        @test last(l) == 750
+
+        insert!(l, firstindex(l), -1000)
+        @test length(l) == length(v) + 2
+        @test first(l) == -1000
+        @test next(l, firstindex(l)) == first(v)
+
+        @test pop!(l) == 750
+        @test length(l) == length(v) + 1
+        @test last(l) == last(v)
+
+        @test popfirst!(l) == -1000
+        @test length(l) == length(v)
+        @test all(l .== v)
+
+        insert!(l, previndex(l, lastindex(l)), 9543)
+        @test length(l) == length(v) + 1
+        @test prev(l, previndex(l, lastindex(l))) == 9543
+        @test last(l) == last(v)
+        @test prev(l, lastindex(l)) == v[end-1]
+        @test next(l, previndex(l, previndex(l, lastindex(l)))) == v[end-1]
+        @test next(l, previndex(l, previndex(l, previndex(l, lastindex(l))))) == 9543
+
+        @test pop!(l, previndex(l, lastindex(l))) == v[end-1]
+        @test length(l) == length(v)
+        @test last(l) == last(v)
+        @test prev(l, lastindex(l)) == 9543
+        @test prev(l, previndex(l, lastindex(l))) == v[end-2]
+        @test next(l, previndex(l, previndex(l, lastindex(l)))) == 9543
+
+        @test pop!(l, 99999, missing) === missing
+    end#@testset
+end#@testset
 
 # ** Scheduling
 

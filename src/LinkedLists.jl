@@ -14,7 +14,7 @@
 module LinkedLists
 
 export List, pop!, popfirst!, first, last, firstindex, lastindex,
-    nextindex, previndex
+    nextindex, previndex, next, prev
 
 import Base: eltype, length, iterate, getindex, setindex!,
     @propagate_inbounds, checkbounds, show, keys, push!, insert!,
@@ -90,14 +90,6 @@ end#function
     (l.data[i], l.next[i])
 end#function
 
-#"""
-#    next(list, index)
-#
-#Returns the next value from `index`.
-#"""
-#function next(list::List, index::Int)
-#end#function
-
 """
     nextindex(list, index)
 
@@ -120,6 +112,33 @@ Returns nothing if at start of `list`.
 @inline function previndex(l::List, i::Int)
     @boundscheck checkbounds(Bool, l, i)
     @inbounds l.prev[i]
+end#function
+
+# TODO: add argument for specifying how many slots to advance
+"""
+    next(list, index)
+
+Returns the next value from `index`.
+
+Returns nothing if at end of `list`.
+"""
+function next(l::List, i::Int)
+    @boundscheck checkbounds(Bool, l, i)
+    @inbounds nexti = nextindex(l, i)
+    @inbounds nexti === nothing ? nothing : l[nexti]
+end#function
+
+"""
+    prev(list, index)
+
+Returns the previous value from `index`.
+
+Returns nothing if at start of `list`.
+"""
+function prev(l::List, i::Int)
+    @boundscheck checkbounds(Bool, l, i)
+    @inbounds previ = previndex(l, i)
+    @inbounds previ === nothing ? nothing : l[previ]
 end#function
 
 "Simple wrapper around `List` to allow iterating through indices."
@@ -178,8 +197,6 @@ end#function
     l
 end#function
 
-pop!(::List, ::Nothing, default) = throw(KeyError(nothing))
-
 function pop!(l::List, i::Int, default)
     checkbounds(Bool, l, i) || return default
 
@@ -215,12 +232,12 @@ end#function
 
 function pop!(l::List)
     isempty(l) && throw(ArgumentError("list must be non-empty"))
-    pop!(l, l.firstind)
+    pop!(l, l.lastind)
 end#function
 
 function popfirst!(l::List)
     isempty(l) && throw(ArgumentError("list must be non-empty"))
-    pop!(l, l.lastind)
+    pop!(l, l.firstind)
 end#function
 
 end#module
