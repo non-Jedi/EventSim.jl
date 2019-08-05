@@ -65,3 +65,9 @@ proven it out yet.
   - [ ] If benchmarks are favorable, consider splitting my linked list
     implementation into its own package or contributing the
     implementation to LinkedLists.jl.
+- [ ] Consider removing dependency on Observables.jl and directly
+  managing a Vector of [[https://github.com/yuyichao/FunctionWrappers.jl][FunctionWrappers]] on each event object. Because
+  callbacks on an ~Observable~ are currently stored as a
+  ~Vector{Any}~, this could have a performance impact.
+- [ ] Implement a process-oriented mode on top of Julia ~Task~ and
+  ~yieldto~?
