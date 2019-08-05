@@ -1,10 +1,10 @@
 * EventSim.jl
 [[https://travis-ci.org/non-Jedi/EventSim.jl][https://travis-ci.org/non-Jedi/EventSim.jl.svg?branch=master]] [[https://coveralls.io/github/non-Jedi/EventSim.jl?branch=master][https://coveralls.io/repos/github/non-Jedi/EventSim.jl/badge.svg?branch=master]]
 
-Sketch of an experiment to create a [[https://en.wikipedia.org/wiki/Discrete-event_simulation][Discrete-event simulation]] package
-based on [[https://juliagizmos.github.io/Observables.jl/stable/][Observables.jl]]. This is in contrast to [[https://github.com/BenLauwens/SimJulia.jl][SimJulia.jl]], which
-is based on [[https://github.com/BenLauwens/ResumableFunctions.jl][ResumableFunctions.jl]]. Reasons for this experiment
-include:
+Sketch of an experiment to create an event-oriented [[https://en.wikipedia.org/wiki/Discrete-event_simulation][Discrete-event
+simulation]] package based on [[https://juliagizmos.github.io/Observables.jl/stable/][Observables.jl]]. This is in contrast to
+[[https://github.com/BenLauwens/SimJulia.jl][SimJulia.jl]], which is a process-oriented DES package based on
+[[https://github.com/BenLauwens/ResumableFunctions.jl][ResumableFunctions.jl]]. Reasons for this experiment include:
 
 - ResumableFunctions.jl is difficult to debug when errors are thrown.
 - The API of SimJulia.jl has some rough edges that surprised me on
@@ -12,6 +12,8 @@ include:
 - By basing the package on something less esoteric than
   ResumableFunctions.jl, better interop may be maintained with the
   rest of the Julia package ecosystem.
+- What better way to understand discrete-event simulation than writing
+  your own discrete-event simulation package?
 
 The downside of this approach is that you will not be able to create a
 process that sequentially waits for a several other processes to
@@ -28,9 +30,9 @@ something like the following:
   end#function
 #+end_src
 
-It's not clear that the same is possible with an Observables.jl-based
-approach. Instead, each of ~get_parts~, ~assemble_parts~, and
-~polish_widget~ may need to be individually chained off the previous step.
+I am hopeful that the event-oriented API can be similiarly concise and
+clear with sufficient helper functions and macros, but I haven't
+proven it out yet.
 
 ** TODO Status
 
@@ -46,8 +48,13 @@ approach. Instead, each of ~get_parts~, ~assemble_parts~, and
     types.
   - [ ] Reread SimJulia.jl docs to see if any other times you'd want
     to attach a callback.
+  - [ ] Design way to trigger functions when "unscheduled" event
+    finishes. Current plan is to simply have each "process" function
+    take as a second argument an observable or composite type
+    containing an observable which it triggers when it considers
+    itself "done".
 - [ ] Come up with gameplan for modeling breakdowns without having to
-  design it into the system from the start.
+  design it into the simulation from the start.
 - [X] Run a simulation.
 - [ ] Types representing scarce resources
 - [ ] Documentation
